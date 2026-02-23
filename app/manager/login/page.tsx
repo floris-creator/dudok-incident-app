@@ -1,13 +1,12 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
 
 export default function ManagerLoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +35,9 @@ export default function ManagerLoginPage() {
         throw new Error('Dit account heeft geen managerrechten.');
       }
 
-      router.push(searchParams.get('next') || '/manager/incidents');
+      const nextPath =
+        typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('next') : null;
+      router.push(nextPath || '/manager/incidents');
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Onbekende fout');

@@ -47,6 +47,13 @@ export function NotificationsClient({ initialNotifications }: { initialNotificat
     <section style={{ display: 'grid', gap: 12, fontSize: 18 }}>
       {error ? <p style={{ color: '#b91c1c', fontSize: 18 }}>{error}</p> : null}
 
+      {sorted.length === 0 ? (
+        <article style={{ background: 'var(--surface)', border: '1px solid var(--brand-100)', borderRadius: 12, padding: 18 }}>
+          <h3 style={{ marginTop: 0 }}>Geen notificaties</h3>
+          <p style={{ marginBottom: 0, color: 'var(--muted)' }}>Nieuwe meldingen verschijnen hier automatisch.</p>
+        </article>
+      ) : null}
+
       {sorted.map((item) => (
         <article
           key={item.id}
@@ -59,19 +66,35 @@ export function NotificationsClient({ initialNotifications }: { initialNotificat
             boxShadow: '0 6px 16px rgba(23, 62, 67, 0.05)',
           }}
         >
-          <h3 style={{ marginTop: 0, marginBottom: 10, fontSize: 24, color: 'var(--brand-900)' }}>{item.title || 'Notificatie'}</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+            <h3 style={{ marginTop: 0, marginBottom: 10, fontSize: 24, color: 'var(--brand-900)' }}>{item.title || 'Notificatie'}</h3>
+            {!item.read ? (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  color: '#1d4ed8',
+                  fontSize: 14,
+                  fontWeight: 700,
+                }}
+              >
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: '#2563eb', display: 'inline-block' }} />
+                Ongelezen
+              </span>
+            ) : null}
+          </div>
           <p style={{ fontSize: 18, marginTop: 0 }}>{item.message || 'Geen bericht'}</p>
-          <span style={{ fontSize: 16, color: '#334155' }}>{new Date(item.created_at).toLocaleString('nl-NL')}</span>
-          <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 16, color: '#334155' }}>{new Date(item.created_at).toLocaleString('nl-NL')}</span>
             {!item.read ? (
               <button
                 type="button"
                 onClick={() => markAsRead(item.id)}
                 disabled={savingId === item.id}
                 style={{
-                  marginTop: 10,
-                  padding: '10px 12px',
-                  fontSize: 16,
+                  padding: '8px 10px',
+                  fontSize: 14,
                   borderRadius: 8,
                   border: 'none',
                   background: 'var(--brand-900)',
@@ -82,7 +105,7 @@ export function NotificationsClient({ initialNotifications }: { initialNotificat
                 Markeer als gelezen
               </button>
             ) : (
-              <span style={{ display: 'block', marginTop: 10, fontSize: 16, color: '#334155' }}>Gelezen</span>
+              <span style={{ display: 'block', fontSize: 14, color: '#334155' }}>Gelezen</span>
             )}
           </div>
         </article>

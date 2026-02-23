@@ -10,9 +10,22 @@ export default function ReportPage() {
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [touched, setTouched] = useState<{ location: boolean; description: boolean }>({
+    location: false,
+    description: false,
+  });
+
+  const locationError = touched.location && location.trim().length === 0 ? 'Locatie is verplicht.' : null;
+  const descriptionError =
+    touched.description && description.trim().length < 20 ? 'Omschrijf het incident met minimaal 20 tekens.' : null;
+
+  const canSubmit = location.trim().length > 0 && description.trim().length >= 20;
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setTouched({ location: true, description: true });
+    if (!canSubmit) return;
+
     setSubmitting(true);
     setError(null);
 
@@ -53,7 +66,7 @@ export default function ReportPage() {
         <h1 style={{ marginTop: 0, color: '#000000', fontSize: 'clamp(16px, 2.8vw, 18px)', fontWeight: 600 }}>
           Incident melden
         </h1>
-        <p style={{ color: 'var(--muted)' }}>Vul locatie en omschrijving in. Je hebt geen account nodig.</p>
+        <p style={{ color: 'var(--muted)', marginBottom: 6 }}>Vul locatie en omschrijving in. Je hebt geen account nodig.</p>
 
         <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
           <label style={{ fontSize: 'clamp(16px, 2.8vw, 18px)', fontWeight: 600 }}>
@@ -81,6 +94,7 @@ export default function ReportPage() {
             <input
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              onBlur={() => setTouched((prev) => ({ ...prev, location: true }))}
               required
               maxLength={200}
               style={{
@@ -95,6 +109,7 @@ export default function ReportPage() {
                 background: '#fbfdfd',
               }}
             />
+            {locationError ? <span style={{ display: 'block', marginTop: 6, color: '#b91c1c', fontSize: 14 }}>{locationError}</span> : null}
           </label>
 
           <label style={{ fontSize: 'clamp(16px, 2.8vw, 18px)', fontWeight: 600 }}>
@@ -102,6 +117,7 @@ export default function ReportPage() {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              onBlur={() => setTouched((prev) => ({ ...prev, description: true }))}
               required
               maxLength={4000}
               rows={8}
@@ -117,11 +133,15 @@ export default function ReportPage() {
                 background: '#fbfdfd',
               }}
             />
+            <span style={{ display: 'block', marginTop: 6, color: 'var(--muted)', fontSize: 14 }}>
+              {description.trim().length}/4000 tekens (min. 20)
+            </span>
+            {descriptionError ? <span style={{ display: 'block', marginTop: 4, color: '#b91c1c', fontSize: 14 }}>{descriptionError}</span> : null}
           </label>
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !canSubmit}
             style={{
               padding: '14px 16px',
               width: 230,

@@ -71,6 +71,20 @@ export function StatisticsClient({ incidents }: { incidents: Incident[] }) {
     });
   }, [incidents, days, location, status]);
 
+  const previousPeriodCount = useMemo(() => {
+    const now = Date.now();
+    const currentFrom = now - days * 24 * 60 * 60 * 1000;
+    const previousFrom = currentFrom - days * 24 * 60 * 60 * 1000;
+
+    return incidents.filter((incident) => {
+      const createdTime = new Date(incident.created_at).getTime();
+      if (createdTime < previousFrom || createdTime >= currentFrom) return false;
+      if (location !== 'all' && incident.location !== location) return false;
+      if (status !== 'all' && incident.status !== status) return false;
+      return true;
+    }).length;
+  }, [incidents, days, location, status]);
+
   const kpis = useMemo(() => {
     const total = filtered.length;
     const severe = filtered.filter(
@@ -129,6 +143,53 @@ export function StatisticsClient({ incidents }: { incidents: Incident[] }) {
     return rows;
   }, [filtered]);
 
+  const trend = useMemo(() => {
+    if (previousPeriodCount === 0 && filtered.length === 0) return '0%';
+    if (previousPeriodCount === 0) return '+100%';
+
+    const change = ((filtered.length - previousPeriodCount) / previousPeriodCount) * 100;
+    const rounded = Math.round(change);
+    return `${rounded > 0 ? '+' : ''}${rounded}%`;
+  }, [filtered.length, previousPeriodCount]);
+
+  function resetFilters() {
+    startTransition(() => {
+      setDays(30);
+      setLocation('all');
+      setStatus('all');
+    });
+  }
+
+  function exportCsv() {
+    const header = ['ID', 'Datum', 'Locatie', 'Status', 'Risico', 'Gemeld door', 'Omschrijving'];
+    const rows = filtered.map((incident) => [
+      incident.id,
+      new Date(incident.created_at).toLocaleString('nl-NL'),
+      incident.location,
+      incident.status,
+      incident.final_risk_label || '',
+      incident.reporter_name || '',
+      incident.description.replaceAll('\\n', ' '),
+    ]);
+
+    // Excel (NL) opens cleaner with semicolon delimiter.
+    const csvBody = [header, ...rows]
+      .map((row) => row.map((cell) => `\"${String(cell).replaceAll('\"', '\"\"')}\"`).join(';'))
+      .join('\\n');
+    const csv = `sep=;\\n${csvBody}`;
+
+    // BOM keeps UTF-8 accents readable in Excel.
+    const blob = new Blob(['\\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `incidenten_${days}d.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       <section
@@ -185,6 +246,36 @@ export function StatisticsClient({ incidents }: { incidents: Incident[] }) {
         </label>
 
         {isPending ? <p style={{ margin: 0, alignSelf: 'end', color: 'var(--muted)' }}>Laden...</p> : null}
+        <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', alignSelf: 'end', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={resetFilters}
+            style={{
+              padding: '8px 10px',
+              borderRadius: 8,
+              border: '1px solid var(--brand-100)',
+              background: 'white',
+              color: 'var(--brand-900)',
+              fontWeight: 700,
+            }}
+          >
+            Reset filters
+          </button>
+          <button
+            type="button"
+            onClick={exportCsv}
+            style={{
+              padding: '8px 10px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--brand-900)',
+              color: 'white',
+              fontWeight: 700,
+            }}
+          >
+            Export CSV
+          </button>
+        </div>
       </section>
 
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
@@ -199,6 +290,7 @@ export function StatisticsClient({ incidents }: { incidents: Incident[] }) {
         >
           <p style={{ margin: 0, color: 'var(--muted)' }}>Totaal incidenten ({days}d)</p>
           <h3 style={{ margin: '8px 0 0', fontSize: 34, lineHeight: 1.1 }}>{kpis.total}</h3>
+          <p style={{ margin: '8px 0 0', fontSize: 14, color: 'var(--muted)' }}>Trend t.o.v. vorige {days} dagen: {trend}</p>
         </article>
         <article
           style={{
