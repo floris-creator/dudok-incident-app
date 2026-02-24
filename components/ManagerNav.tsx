@@ -21,43 +21,34 @@ export function ManagerNav() {
   }
 
   return (
-    <header
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        background: 'var(--brand-900)',
-        color: 'white',
-        padding: '14px 22px',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
-      }}
-    >
-      <nav style={{ display: 'flex', gap: 16 }}>
-        <Link href="/manager/incidents" style={{ color: 'white', fontSize: 18, fontWeight: 600, textDecoration: 'none' }}>
+    <header className="manager-nav">
+      <nav className="manager-nav-links">
+        <Link
+          href="/manager/incidents"
+          className={pathname.startsWith('/manager/incidents') ? 'manager-nav-link manager-nav-link-active' : 'manager-nav-link'}
+        >
           Incidenten
         </Link>
-        <Link href="/manager/notifications" style={{ color: 'white', fontSize: 18, fontWeight: 600, textDecoration: 'none' }}>
+        <Link
+          href="/manager/notifications"
+          className={
+            pathname.startsWith('/manager/notifications') ? 'manager-nav-link manager-nav-link-active' : 'manager-nav-link'
+          }
+        >
           Notificaties
         </Link>
-        <Link href="/manager/statistics" style={{ color: 'white', fontSize: 18, fontWeight: 600, textDecoration: 'none' }}>
+        <Link
+          href="/manager/statistics"
+          className={pathname.startsWith('/manager/statistics') ? 'manager-nav-link manager-nav-link-active' : 'manager-nav-link'}
+        >
           Statistieken
         </Link>
       </nav>
-      <button
-        type="button"
-        onClick={onLogout}
-        style={{
-          padding: '10px 14px',
-          fontSize: 16,
-          borderRadius: 8,
-          background: 'white',
-          color: 'var(--brand-900)',
-          border: '1px solid var(--brand-100)',
-          fontWeight: 700,
-        }}
-      >
-        Uitloggen
-      </button>
+      <div className="manager-nav-actions">
+        <button type="button" onClick={onLogout} className="manager-logout-button">
+          Uitloggen
+        </button>
+      </div>
     </header>
   );
 }
