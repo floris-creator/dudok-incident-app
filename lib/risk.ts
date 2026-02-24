@@ -18,9 +18,11 @@ const INJURY_AND_EVENT_RULES: RiskRule[] = [
   { pattern: /verbrand|brandwond|frituurvet|kokend|heet water|hete soep/g, weight: 7, maxHits: 2 },
   { pattern: /hoofdletsel|hersenschudding|botbreuk|gebroken|fractuur|ernstig letsel/g, weight: 7, maxHits: 1 },
   { pattern: /snijwond|snee|bloeding|bloedde|hecht/g, weight: 4, maxHits: 2 },
-  { pattern: /uitgegleden|uitglijd|gestruikel|struikel|gevallen|valpartij|ten val/g, weight: 5, maxHits: 2 },
+  { pattern: /uitgegleden|uitglijd|gleed uit|gestruikel|struikel|gevallen|valpartij|ten val|viel\b/g, weight: 5, maxHits: 2 },
+  { pattern: /pijn|kneuzing|gekneusd|verstuik|verzwik|blauwe plek|zwelling/g, weight: 3, maxHits: 2 },
+  { pattern: /pols|enkel|schouder|rug|knie|arm|heup/g, weight: 2, maxHits: 2 },
   { pattern: /bekneld|opgesloten|vastgezet|klem/g, weight: 6, maxHits: 1 },
-  { pattern: /geraakt door|aangereden|aanrijding|botsing|vallend voorwerp|rolcontainer/g, weight: 6, maxHits: 1 },
+  { pattern: /geraakt door|aangereden|aanrijding|botsing|vallend voorwerp|rolcontainer|krat.*viel|zware krat|van een stelling viel/g, weight: 7, maxHits: 1 },
   { pattern: /rookontwikkeling|stank|lekkage|defect|storing/g, weight: 3, maxHits: 2 },
 ];
 
@@ -84,6 +86,22 @@ export function calculateIncidentRisk(input: { location: string; description: st
   score += applyRules(text, HIGH_IMPACT_RULES);
   score += applyRules(text, INJURY_AND_EVENT_RULES);
   score -= applyRules(text, MITIGATING_RULES);
+
+  const hasFall = /(uitgegleden|uitglijd|gleed uit|gestruikel|struikel|gevallen|valpartij|ten val|viel\b)/.test(text);
+  const hasPainOrInjury = /(pijn|kneuzing|gekneusd|verstuik|verzwik|snijwond|bloeding|verbrand)/.test(text);
+  const hasBodyPart = /(pols|enkel|schouder|rug|knie|arm|heup|gezicht|hals|hoofd|hand)/.test(text);
+  const hasHeavyObject = /(zware krat|krat.*viel|van een stelling viel|vallend voorwerp|geraakt door)/.test(text);
+
+  // Risicomatrix-benadering: gebeurtenis + letsel geeft minimaal matig risico.
+  if (hasFall && hasPainOrInjury) {
+    score += 1;
+  }
+  if (hasPainOrInjury && hasBodyPart) {
+    score += 1;
+  }
+  if (hasHeavyObject && (hasPainOrInjury || hasBodyPart)) {
+    score += 2;
+  }
 
   if (/meerdere (medewerkers|gasten|personen)|meerdere gewond/.test(text)) {
     score += 4;
